@@ -235,15 +235,12 @@ with open("/Users/jennyxu/Desktop/genetics/gnomad_col6A1") as csvDataFile:
                     'style = "fill: ' + fill + '; fill-opacity: 0.6; stroke: ' + stroke
                     + '; stroke-opacity: 0.8; stroke-width:1" />\n'
                 )
-            # use lines as markers instead
-            # f.write('\t<line x1="' + mid + '" y1="189" x2="' + mid + '" y2="209" style="stroke: ' + fill + '; '
-            #         'stroke-width:4" />\n')
             f.write(
                 '\t<polygon points="' + start + ',180 ' + end + ',180 ' + mid + ',198" '
                 'style = "fill: ' + fill + '; stroke: ' + stroke + '; stroke-width:1" />\n'
             )
-            # zoom region markers
 
+            # zoom region markers
             start1 = str(num * 6 - 1508 - 7)
             mid1 = str(num * 6 - 1508)
             end1 = str(num * 6 - 1508 + 7)
