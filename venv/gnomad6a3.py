@@ -228,7 +228,7 @@ with open("/Users/jennyxu/Desktop/genetics/gnomad_col6a3") as csvDataFile:
                 'style="stroke: #000000; stroke-width:2; stroke-linecap: round" />\n'
             )
             f.write(
-                '\t<text text-anchor="end" x="2062" y="' + str(base + 30) + '" '
+                '\t<text text-anchor="end" x="3177" y="' + str(base + 30) + '" '
                 'style = "font-size: 12px;">3177</text>\n\n'
             )
             # ticks (every 100 AAs)

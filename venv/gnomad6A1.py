@@ -264,8 +264,6 @@ with open("/Users/jennyxu/Desktop/genetics/gnomad_col6A1") as csvDataFile:
         f.write('</body>\n')
         f.write('</html>')
 
-
-
 # checks:
 # spot checked code
 # NEED TO CHECK MATH FOR ZOOMED IN FIGURE
