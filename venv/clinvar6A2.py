@@ -3,11 +3,14 @@ import csv
 import os
 import argparse
 
+
 parser = argparse.ArgumentParser(description="sets file name")
 parser.add_argument("startfile", help="Enter name of data file")
 parser.add_argument("destination", help="Enter name of destination file")
 args = parser.parse_args()
+
 if os.path.exists(args.startfile):
+
     with open(args.startfile) as tsv:
         reader = csv.DictReader(tsv, delimiter="\t")
         results = []
@@ -18,6 +21,7 @@ if os.path.exists(args.startfile):
         )
         protein_pat = re.compile(r'(?<=NP_)\d{6}')  # searches for NP_[protein #]
         glypattern = re.compile(r'(?<=p.Gly)\d+(?=[A-Z][a-z]+)')
+
         for row in reader:
             gene = row["symbol"]
             pathogenic = row["pathogenic"]
@@ -26,57 +30,93 @@ if os.path.exists(args.startfile):
             consequence = row["hgvs_p"]
             key = 0
             gly = 0
+
             if gene == 'COL6A2' and int(uncertain) >= 1 and location_pat.findall(consequence):
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
                 protein = str(protein_pat.findall(consequence))[2:-2]
                 if protein == '001840':
                     key = 0
+                    location = str(location_pat.findall(consequence))[2:-2]
+                    location = int(location)
+                    if glypattern.findall(consequence):
+                        gly = 1
+                    result = [location, key, gly]
+                    results.append(result)
                 else:
                     errors.append("Error: protein " + protein + " not protein 001840")
-                if glypattern.findall(consequence):
-                    gly = 1
-                result = [location, key, gly]
-                results.append(result)
+
             elif gene == 'COL6A2' and int(likely_path) >= 1 and location_pat.findall(consequence):
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
                 protein = str(protein_pat.findall(consequence))[2:-2]
                 if protein == '001840':
+                    location = str(location_pat.findall(consequence))[2:-2]
+                    location = int(location)
                     key = 1
+                    if glypattern.findall(consequence):
+                        gly = 1
+                    result = [location, key, gly]
+                    results.append(result)
                 else:
                     errors.append("Error: protein " + protein + " not protein 001840")
-                if glypattern.findall(consequence):
-                    gly = 1
-                result = [location, key, gly]
-                results.append(result)
+
             elif gene == 'COL6A2' and int(pathogenic) >= 1 and location_pat.findall(consequence):
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
                 protein = str(protein_pat.findall(consequence))[2:-2]
                 if protein == '001840':
+                    location = str(location_pat.findall(consequence))[2:-2]
+                    location = int(location)
                     key = 2
+                    if glypattern.findall(consequence):
+                        gly = 1
+                    result = [location, key, gly]
+                    results.append(result)
                 else:
                     errors.append("Error: protein " + protein + " not protein 001840")
-                if glypattern.findall(consequence):
-                    gly = 1
-                result = [location, key, gly]
-                results.append(result)
+
         for sublist in results:
             just_location.append(sublist[0])  # appends first # in each pair to just_location
         for index, item in enumerate(just_location):  # checks if in ascending order, if not print error msg
             if item < just_location[index - 1] and index != 0:
                 errors.append("Error at row %d: %d not ascending" % (index, item))
+
         print errors
         print results
+
+        numerator = 0
+        denom = 0
+        for sublist in results:
+            if 254 <= sublist[0] <= 590 and (sublist[1] == 1 or sublist[1] == 2):
+                numerator += 1
+            if sublist[1] == 1 or sublist[1] == 2:
+                denom += 1
+        percentage = (float(numerator) / float(denom)) * 100
+
+        numerator_vus = 0
+        denom_vus = 0
+        for sublist in results:
+            if 254 <= sublist[0] <= 590 and (sublist[1] == 0):
+                numerator_vus += 1
+            if sublist[1] == 0:
+                denom_vus += 1
+        percentage_vus = (float(numerator_vus) / float(denom_vus)) * 100
+
+        print 'For pathogenic:'
+        print 'On TH: ' + str(numerator)
+        print 'Total: ' + str(denom)
+        print str(numerator) + '/' + str(denom) + ' = ' + str(percentage) + '%'
+
+        print 'For VUS:'
+        print 'On TH: ' + str(numerator_vus)
+        print 'Total: ' + str(denom_vus)
+        print str(numerator_vus) + '/' + str(denom_vus) + ' = ' + str(percentage_vus) + '%'
 
         with open(args.destination, 'w') as f:
             f.write('<!DOCTYPE html>\n<html>\n')
             f.write('<head></head>\n')
             f.write('<body>\n')
+
             for error in errors:
                 f.write('<!--' + error + '-->\n')
+
             f.write('<svg height="500" width="2100">\n\n')
+
             # box for key
             f.write('\n<!-- KEY -->\n')
             f.write(
@@ -145,6 +185,7 @@ if os.path.exists(args.startfile):
                 '\t\t<text text-anchor="start" x="360" y="110" '
                 'style = "font-size: 10; font-weight: bold; fill: #ff9a32">VWA</text>\n\n'
             )
+
             n = 0
             for n in range(0, 2):
                 base = 200 + 100 * n
@@ -219,6 +260,7 @@ if os.path.exists(args.startfile):
                 end = str(num * 2 + 7)
                 fill = ""
                 stroke = ""
+
                 if sublist[1] == 2:
                     fill = '#FE018C'  # pink
                     stroke = '#60002c'
@@ -230,6 +272,7 @@ if os.path.exists(args.startfile):
                         '\t<line x1="' + mid + '" y1="284" x2="' + mid + '" y2="299" '
                         'style="stroke: ' + stroke + '; stroke-width:2" />\n'
                     )
+
                 elif sublist[1] == 1:
                     fill = '#fff600'  # yellow
                     stroke = '#593e00'
@@ -241,6 +284,7 @@ if os.path.exists(args.startfile):
                         '\t<line x1="' + mid + '" y1="284" x2="' + mid + '" y2="299" '
                         'style="stroke: ' + stroke + '; stroke-width:2" />\n'
                     )
+
                 elif sublist[1] == 0:
                     fill = '#00E408'  # green
                     stroke = '#005908'
@@ -253,17 +297,19 @@ if os.path.exists(args.startfile):
                     '\t<line x1="' + mid + '" y1="184" x2="' + mid + '" y2="199" '
                     'style="stroke: ' + stroke + '; stroke-width:2" />\n'
                 )
+
                 if (sublist[1] == 1 or sublist[1] == 2) and sublist[2] == 1:
                     fill = '#8d02ff'
-                    stroke = '#23004c' #purple
+                    stroke = '#23004c'  # purple
                     f.write(
                         '\t<polygon points="' + start + ',270 ' + end + ',270 ' + mid + ',285" '
-                                                                                        'style = "fill: ' + fill + '; stroke: ' + stroke + '; stroke-width:1" />\n'
+                        'style = "fill: ' + fill + '; stroke: ' + stroke + '; stroke-width:1" />\n'
                     )
                     f.write(
                         '\t<line x1="' + mid + '" y1="284" x2="' + mid + '" y2="299" '
-                                                                         'style="stroke: ' + stroke + '; stroke-width:2" />\n'
+                        'style="stroke: ' + stroke + '; stroke-width:2" />\n'
                     )
+
             f.write('</svg>\n')
             f.write('</body>\n')
             f.write('</html>')
