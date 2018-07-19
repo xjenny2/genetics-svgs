@@ -1,47 +1,12 @@
 import re
 import csv
-
+from functionsgnomad import readresults, checkascending
 with open("/Users/jennyxu/Desktop/genetics/gnomad_col6A1") as csvDataFile:
     reader = csv.DictReader(csvDataFile)  # sets up file as dictionary with first line as header
-    results = []
-    just_location = []
-    errors = []
-    pattern = re.compile(
-        r'(?<=p\.[A-Z][a-z]{2})\d+(?=[A-Z][a-z]{2}$)'  # searches for p.XXX[Location]XXX"
-    )
-    intpattern = re.compile(r'[\d.]+(?=e-)')  # finds base in exponent
-    intexp = re.compile(r'(?<=e)[-\d]+')  # finds exponent
-    glypattern = re.compile(r'(?<=p.Gly)\d+(?=[A-Z][a-z]+)')  # finds exponent
-    for row in reader:
-        filter_ex = row["Filters - exomes"]
-        filter_gen = row["Filters - genomes"]
-        alleleCt = row["Allele Count"]
-        alleleFreq = row["Allele Frequency"]
-        consequence = row["Protein Consequence"]
-        if (filter_ex == "PASS" or filter_gen == "PASS") and pattern.findall(consequence):
-            location = str(pattern.findall(consequence))[2:-2]  # remove [''] from string
-            location = int(location)
-            gly = 0
-            if glypattern.findall(consequence):
-                gly = 1
-            if alleleCt == '1':
-                alleleCt = 2
-            elif intpattern.findall(alleleFreq):
-                freqint = float(str(intpattern.findall(alleleFreq))[2:-2])
-                freqexp = float(str(intexp.findall(alleleFreq))[2:-2])
-                # alleleFreq = freqint ** (-freqexp)
-                alleleCt = freqint * 10 ** freqexp
-            else:
-                alleleCt = alleleFreq
-            alleleCt = float(alleleCt)
-            result = [location, alleleCt, gly]
-            results.append(result)
+    raw_results = readresults(reader)
+    results, errors = checkascending(raw_results)
     print results
-    for sublist in results:
-            just_location.append(sublist[0])  # appends first # in each pair to just_location
-    for index, item in enumerate(just_location):  # checks if in ascending order, if not print error msg
-        if item < just_location[index - 1] and index != 0:
-            errors.append("Error at row %d: %d not ascending" % (index, item))
+    print errors
 
     with open('/Users/jennyxu/Desktop/genetics/gnomad_col6A1_svg.html', 'w') as f:
         f.write('<!DOCTYPE html>\n<html>\n')
@@ -49,7 +14,6 @@ with open("/Users/jennyxu/Desktop/genetics/gnomad_col6A1") as csvDataFile:
         f.write('<body>\n')
         for error in errors:
             f.write('<!--' + error + '-->\n')
-        print errors
         f.write('<svg height="1000" width="2100">\n\n')
         # box for key
         f.write('\n<!-- KEY -->\n')
