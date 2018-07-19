@@ -2,6 +2,7 @@ import re
 import csv
 import os
 import argparse
+from functionsclinvar import readresultsascending, percent_pathogenic, percent_vus
 
 
 parser = argparse.ArgumentParser(description="sets file name")
@@ -13,94 +14,15 @@ if os.path.exists(args.startfile):
 
     with open(args.startfile) as tsv:
         reader = csv.DictReader(tsv, delimiter="\t")
-        results = []
-        just_location = []
-        errors = []
-        location_pat = re.compile(
-            r'(?<=NP_\d{6}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)'  # searches for NP_######.#:p.XXX[Location]XXX"
-        )
-        protein_pat = re.compile(r'(?<=NP_)\d{6}')  # searches for NP_[protein #]
-        glypattern = re.compile(r'(?<=p.Gly)\d+(?=[A-Z][a-z]+)')
 
-        for row in reader:
-            gene = row["symbol"]
-            pathogenic = row["pathogenic"]
-            likely_path = row["likely_pathogenic"]
-            uncertain = row["uncertain_significance"]
-            consequence = row["hgvs_p"]
-            key = 0
-            gly = 0
-
-            if gene == 'COL6A2' and int(uncertain) >= 1 and location_pat.findall(consequence):
-                protein = str(protein_pat.findall(consequence))[2:-2]
-                if protein == '001840':
-                    key = 0
-                    location = str(location_pat.findall(consequence))[2:-2]
-                    location = int(location)
-                    if glypattern.findall(consequence):
-                        gly = 1
-                    result = [location, key, gly]
-                    results.append(result)
-                else:
-                    errors.append("Error: protein " + protein + " not protein 001840")
-
-            elif gene == 'COL6A2' and int(likely_path) >= 1 and location_pat.findall(consequence):
-                protein = str(protein_pat.findall(consequence))[2:-2]
-                if protein == '001840':
-                    location = str(location_pat.findall(consequence))[2:-2]
-                    location = int(location)
-                    key = 1
-                    if glypattern.findall(consequence):
-                        gly = 1
-                    result = [location, key, gly]
-                    results.append(result)
-                else:
-                    errors.append("Error: protein " + protein + " not protein 001840")
-
-            elif gene == 'COL6A2' and int(pathogenic) >= 1 and location_pat.findall(consequence):
-                protein = str(protein_pat.findall(consequence))[2:-2]
-                if protein == '001840':
-                    location = str(location_pat.findall(consequence))[2:-2]
-                    location = int(location)
-                    key = 2
-                    if glypattern.findall(consequence):
-                        gly = 1
-                    result = [location, key, gly]
-                    results.append(result)
-                else:
-                    errors.append("Error: protein " + protein + " not protein 001840")
-
-        for sublist in results:
-            just_location.append(sublist[0])  # appends first # in each pair to just_location
-        for index, item in enumerate(just_location):  # checks if in ascending order, if not print error msg
-            if item < just_location[index - 1] and index != 0:
-                errors.append("Error at row %d: %d not ascending" % (index, item))
-
+        errors, results = readresultsascending(reader, 'COL6A2', '001840')
+        numerator_path, denom_path, percentage_path = percent_pathogenic(results, 254, 590)
+        numerator_vus, denom_vus, percentage_vus = percent_vus(results, 254, 590)
         print errors
-        print results
-
-        numerator = 0
-        denom = 0
-        for sublist in results:
-            if 254 <= sublist[0] <= 590 and (sublist[1] == 1 or sublist[1] == 2):
-                numerator += 1
-            if sublist[1] == 1 or sublist[1] == 2:
-                denom += 1
-        percentage = (float(numerator) / float(denom)) * 100
-
-        numerator_vus = 0
-        denom_vus = 0
-        for sublist in results:
-            if 254 <= sublist[0] <= 590 and (sublist[1] == 0):
-                numerator_vus += 1
-            if sublist[1] == 0:
-                denom_vus += 1
-        percentage_vus = (float(numerator_vus) / float(denom_vus)) * 100
-
         print 'For pathogenic:'
-        print 'On TH: ' + str(numerator)
-        print 'Total: ' + str(denom)
-        print str(numerator) + '/' + str(denom) + ' = ' + str(percentage) + '%'
+        print 'On TH: ' + str(numerator_path)
+        print 'Total: ' + str(denom_path)
+        print str(numerator_path) + '/' + str(denom_path) + ' = ' + str(percentage_path) + '%'
 
         print 'For VUS:'
         print 'On TH: ' + str(numerator_vus)
