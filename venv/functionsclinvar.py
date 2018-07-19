@@ -3,8 +3,8 @@ import re
 
 def readresultsascending(table, gene_name, protein_name):
     resultsraw = []
-    just_location = []
-    errorsraw = []
+    results = []
+    errors = []
     location_pat = re.compile(
         r'(?<=NP_\d{6}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)'
         # searches for NP_######.#:p.XXX[Location]XXX"
@@ -30,7 +30,7 @@ def readresultsascending(table, gene_name, protein_name):
                 result = [location, key, gly]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                errors.append("Error: protein " + protein + " not protein 001839")
 
         elif gene == gene_name and int(likely_path) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
@@ -44,7 +44,7 @@ def readresultsascending(table, gene_name, protein_name):
                 result = [location, key, gly]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                errors.append("Error: protein " + protein + " not protein 001839")
 
         elif gene == gene_name and int(pathogenic) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
@@ -58,18 +58,21 @@ def readresultsascending(table, gene_name, protein_name):
                 result = [location, key, gly]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                errors.append("Error: protein " + protein + " not protein 001839")
+    minimum = 0
     for result in resultsraw:
-        just_location.append(result[0])  # appends first # in each pair to just_location
-    for index, item in enumerate(just_location):  # checks if in ascending order, if not print error msg
-        if item < just_location[index - 1] and index != 0:
-            errorsraw.append("Error at row %d: %d not ascending" % (index, item))
-    return errorsraw, resultsraw
+        if result[0] >= minimum:
+            minimum = result[0]
+            results.append(result)
+        elif result[0] < minimum:
+            errors.append("Error: %d not ascending from %d" % (result[0], minimum))
+    return resultsraw
+
 
 def readresultsdescending(table, gene_name, protein_name):
     resultsraw = []
-    just_location = []
-    errorsraw = []
+    results = []
+    errors = []
     location_pat = re.compile(
         r'(?<=NP_\d{6}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)'
         # searches for NP_######.#:p.XXX[Location]XXX"
@@ -95,7 +98,7 @@ def readresultsdescending(table, gene_name, protein_name):
                 result = [location, key, gly]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                errors.append("Error: protein " + protein + " not protein 001839")
 
         elif gene == gene_name and int(likely_path) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
@@ -109,7 +112,7 @@ def readresultsdescending(table, gene_name, protein_name):
                 result = [location, key, gly]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                errors.append("Error: protein " + protein + " not protein 001839")
 
         elif gene == gene_name and int(pathogenic) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
@@ -123,19 +126,22 @@ def readresultsdescending(table, gene_name, protein_name):
                 result = [location, key, gly]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
-    for result in resultsraw:
-        just_location.append(result[0])  # appends first # in each pair to just_location
-    for index, item in enumerate(just_location):  # checks if in ascending order, if not print error msg
-        if item > just_location[index - 1] and index != 0:
-            errorsraw.append("Error at row %d: %d not descending" % (index, item))
-    return errorsraw, resultsraw
-
+                errors.append("Error: protein " + protein + " not protein 001839")
+    for index, result in enumerate(resultsraw):
+        if index == 0:
+            maximum = result[0]
+            results.append(result)
+        elif result[0] <= maximum:
+            maximum = result[0]
+            results.append(result)
+        elif result[0] > maximum:
+            errors.append("Error: %d not descending from %d" % (result[0], maximum))
+    return errors, results
 
 def readresultsfkrp(table, gene_name, protein_name):
     resultsraw = []
-    just_location = []
-    errorsraw = []
+    results = []
+    errors = []
     location_pat = re.compile(
         r'(?<=NP_\d{6}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)'
         # searches for NP_######.#:p.XXX[Location]XXX"
@@ -160,7 +166,7 @@ def readresultsfkrp(table, gene_name, protein_name):
                 result = [location, key, ter]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                errors.append("Error: protein " + protein + " not protein 001839")
 
         elif gene == gene_name and int(likely_path) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
@@ -173,7 +179,7 @@ def readresultsfkrp(table, gene_name, protein_name):
                 result = [location, key, ter]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                errors.append("Error: protein " + protein + " not protein 001839")
 
         elif gene == gene_name and int(pathogenic) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
@@ -186,13 +192,15 @@ def readresultsfkrp(table, gene_name, protein_name):
                 result = [location, key, ter]
                 resultsraw.append(result)
             else:
-                errorsraw.append("Error: protein " + protein + " not protein 001839")
+                error.append("Error: protein " + protein + " not protein 001839")
+    minimum = 0
     for result in resultsraw:
-        just_location.append(result[0])  # appends first # in each pair to just_location
-    for index, item in enumerate(just_location):  # checks if in ascending order, if not print error msg
-        if item < just_location[index - 1] and index != 0:
-            errorsraw.append("Error at row %d: %d not ascending" % (index, item))
-    return errorsraw, resultsraw
+        if result[0] >= minimum:
+            minimum = result[0]
+            results.append(result)
+        elif result[0] < minimum:
+            errors.append("Error: %d not ascending from %d" % (result[0], minimum))
+    return errors, results
 
 
 def percent_pathogenic(total, helix_start, helix_end):
