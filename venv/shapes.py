@@ -4,12 +4,10 @@ def bluerect(height, start, end):
            + str(height + 6) + ' ' + str(start) + ',' + str(height + 6) \
            + '" style = "fill: #9bfffb; fill-opacity: 0.6; stroke: #22e2db; stroke-width:1" />\n\n'
 
-
 def greenrect( height, start, end):
     return '\t<polygon points="' + str(start) + ',' + str(height - 6) + ' ' + str(end) + ',' + str(height - 6) + ' ' \
            + str(end) + ',' + str(height + 6) + ' ' + str(start) + ',' + str(height + 6) + '" ' \
-            'style = "fill:#b6ff9b; fill-opacity: 0.6; stroke: #00E408; stroke-width:1" />\n\n'
-
+            'style = "fill:#a1ff89; fill-opacity: 0.6; stroke: #28c600; stroke-width:1" />\n\n'
 
 def triangle(height, position, fill, stroke):
     start = str(position * 3 + 1 - 7)
@@ -17,6 +15,14 @@ def triangle(height, position, fill, stroke):
     end = str(position * 3 + 1 + 7)
     return  '\t<polygon points="' + start + ','+ str(height-30) + ' ' + end + ',' + str(height-30) + ' ' + mid + ',' \
             + str(height-15) + '" style = "fill: ' + fill + '; stroke: ' + stroke + '; stroke-width:1" />\n'
+
+
+def only_triangle(height, position, fill, stroke):
+    start = str(position * 2 - 7)
+    mid = str(position * 2)
+    end = str(position * 2 + 7)
+    return '\t<polygon points="' + start + ',' + str(height - 20) + ' ' + end + ',' + str(height - 20) + ' ' + mid + ',' \
+           + str(height - 2) + '" style = "fill: ' + fill + '; stroke: ' + stroke + '; stroke-width:1" />\n'
 
 
 def line(height, position, stroke):
