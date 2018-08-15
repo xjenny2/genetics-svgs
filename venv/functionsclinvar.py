@@ -3,210 +3,6 @@ import requests
 from bs4 import BeautifulSoup as bs
 
 
-# parse general results from clinvar
-def readresults(table, gene_name, accession_id): # data source, name of gene, NP ID
-    resultsraw = []
-    errors = []
-    location_pat = re.compile(
-        r'(?<=NP_\d{%d}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)' % len(accession_id)
-        # searches for NP_######.#:p.XXX[Location]XXX"
-    )
-    protein_pat = re.compile(r'(?<=NP_)\d{%d}' % len(accession_id))  # NP ID from data
-    glypattern = re.compile(r'(?<=p.Gly)\d+(?=[A-Z][a-z]+)')
-    terpattern = re.compile(r'(?<=p.[A-Z][a-z]{2})\d+(?=Ter)')
-    for row in table:
-        gene = row["symbol"]
-        pathogenic = row["pathogenic"]
-        likely_path = row["likely_pathogenic"]
-        uncertain = row["uncertain_significance"]
-        consequence = row["hgvs_p"]
-
-        if gene == gene_name and int(uncertain) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                key = 0
-                special = 0
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                if terpattern.findall(consequence):
-                    special = 2
-                if glypattern.findall(consequence):
-                    special = 1
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-
-        elif gene == gene_name and int(likely_path) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                key = 1
-                special = 0
-                if terpattern.findall(consequence):
-                    special = 2
-                if glypattern.findall(consequence):
-                    special = 1
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-
-        elif gene == gene_name and int(pathogenic) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                key = 2
-                special = 0
-                if terpattern.findall(consequence):
-                    special = 2
-                if glypattern.findall(consequence):
-                    special = 1
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-    return resultsraw, errors
-
-
-# parse results for dysf
-def readresultsdysf(table, gene_name, accession_id):
-    resultsraw = []
-    errors = []
-    location_pat = re.compile(
-        r'(?<=NP_\d{%d}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)' % len(accession_id)
-        # searches for NP_######.#:p.XXX[Location]XXX"
-    )
-    protein_pat = re.compile(r'(?<=NP_)\d{%d}' % len(accession_id))  # searches for NP_ ID
-    terpattern = re.compile(r'(?<=p.[A-Z][a-z]{2})\d+(?=Ter)')
-    for row in table:
-        gene = row["symbol"]
-        pathogenic = row["pathogenic"]
-        likely_path = row["likely_pathogenic"]
-        uncertain = row["uncertain_significance"]
-        consequence = row["hgvs_p"]
-
-        if gene == gene_name and int(uncertain) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                key = 0
-                special = 0
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                if terpattern.findall(consequence):
-                    special = 2
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-
-        elif gene == gene_name and int(likely_path) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                key = 1
-                special = 0
-                if terpattern.findall(consequence):
-                    special = 2
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-
-        elif gene == gene_name and int(pathogenic) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                key = 2
-                special = 0
-                if terpattern.findall(consequence):
-                    special = 2
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-    return resultsraw, errors
-
-
-# parse results for gne
-def readresultsgne(table, gene_name, accession_id):
-    resultsraw = []
-    errors = []
-    location_pat = re.compile(
-        r'(?<=NP_\d{%d}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)' % len(accession_id)
-        # searches for NP_######.#:p.XXX[Location]XXX"
-    )
-    protein_pat = re.compile(r'(?<=NP_)\d{%d}' % len(accession_id))
-    glypattern = re.compile(r'(?<=p.Gly)\d+(?=[A-Z][a-z]+)')
-    terpattern = re.compile(r'(?<=p\.[A-Z][a-z]{2})\d+(?=Ter)')
-    special1 = re.compile(r'NP_001121699\.1:p\.Met743Thr|NP_001121699\.1:p\.Ile618Thr|'
-                          r'NP_001121699\.1:p\.Val603Leu|NP_001121699\.1:p\.Asp207Val|'
-                          r'NP_001121699\.1:p\.Ala662Val|NP_001121699\.1:p\.Asp409Tyr')
-    for row in table:
-        gene = row["symbol"]
-        pathogenic = row["pathogenic"]
-        likely_path = row["likely_pathogenic"]
-        uncertain = row["uncertain_significance"]
-        consequence = row["hgvs_p"]
-        if gene == gene_name and int(uncertain) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                key = 0
-                special = 0
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                if special1.findall(consequence):
-                    print consequence
-                    special = 3
-                elif terpattern.findall(consequence):
-                    special = 2
-                elif glypattern.findall(consequence):
-                    special = 1
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-
-        elif gene == gene_name and int(likely_path) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                key = 1
-                special = 0
-                if special1.findall(consequence):
-                    print consequence
-                    special = 3
-                elif terpattern.findall(consequence):
-                    special = 2
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-
-        elif gene == gene_name and int(pathogenic) >= 1 and location_pat.findall(consequence):
-            protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
-                location = str(location_pat.findall(consequence))[2:-2]
-                location = int(location)
-                key = 2
-                special = 0
-                if special1.findall(consequence):
-                    print consequence
-                    special = 3
-                elif terpattern.findall(consequence):
-                    special = 2
-                result = [location, key, special]
-                resultsraw.append(result)
-            else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
-    return resultsraw, errors
-
-
 # get name of gene from uniprot
 def genename(proteinid):
     site = requests.get('https://www.uniprot.org/uniprot/' + proteinid)
@@ -251,15 +47,16 @@ def domains(repeats, proteinid):  # number of domains, protein id
     return results, proteinlength
 
 
-# parse results for ter only
-def readresultster(table, gene_name, accession_id):
+# parse general results from clinvar
+def readresults(table, gene_name, reference_id): # data source, name of gene, NP ID
     resultsraw = []
     errors = []
     location_pat = re.compile(
-        r'(?<=NP_\d{%d}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)' % len(accession_id)
+        r'(?<=NP_\d{%d}\.\d:p\.[A-Z][a-z][a-z])\d+(?=[A-Z][a-z]{2}$)' % len(reference_id)
         # searches for NP_######.#:p.XXX[Location]XXX"
     )
-    protein_pat = re.compile(r'(?<=NP_)\d{%d}' % len(accession_id))  # searches for NP_[protein #]
+    protein_pat = re.compile(r'(?<=NP_)\d{%d}' % len(reference_id))  # NP ID from data
+    glypattern = re.compile(r'(?<=p.Gly)\d+(?=[A-Z][a-z]+)')
     terpattern = re.compile(r'(?<=p.[A-Z][a-z]{2})\d+(?=Ter)')
     for row in table:
         gene = row["symbol"]
@@ -270,48 +67,55 @@ def readresultster(table, gene_name, accession_id):
 
         if gene == gene_name and int(uncertain) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
+            if protein == reference_id:
                 key = 0
-                ter = 0
+                special = 0
                 location = str(location_pat.findall(consequence))[2:-2]
                 location = int(location)
                 if terpattern.findall(consequence):
-                    ter = 1
-                result = [location, key, ter]
+                    special = 2
+                if glypattern.findall(consequence):
+                    special = 1
+                result = [location, key, special]
                 resultsraw.append(result)
             else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
+                errors.append("Error: protein " + protein + " not protein " + reference_id)
 
         elif gene == gene_name and int(likely_path) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
+            if protein == reference_id:
                 location = str(location_pat.findall(consequence))[2:-2]
                 location = int(location)
                 key = 1
-                ter = 0
+                special = 0
                 if terpattern.findall(consequence):
-                    ter = 1
-                result = [location, key, ter]
+                    special = 2
+                if glypattern.findall(consequence):
+                    special = 1
+                result = [location, key, special]
                 resultsraw.append(result)
             else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
+                errors.append("Error: protein " + protein + " not protein " + reference_id)
 
         elif gene == gene_name and int(pathogenic) >= 1 and location_pat.findall(consequence):
             protein = str(protein_pat.findall(consequence))[2:-2]
-            if protein == accession_id:
+            if protein == reference_id:
                 location = str(location_pat.findall(consequence))[2:-2]
                 location = int(location)
                 key = 2
-                ter = 0
+                special = 0
                 if terpattern.findall(consequence):
-                    ter = 1
-                result = [location, key, ter]
+                    special = 2
+                if glypattern.findall(consequence):
+                    special = 1
+                result = [location, key, special]
                 resultsraw.append(result)
             else:
-                errors.append("Error: protein " + protein + " not protein " + accession_id)
+                errors.append("Error: protein " + protein + " not protein " + reference_id)
     return resultsraw, errors
 
 
+# checks order
 def checkascending(resultsraw, errors):
     results = []
     minimum = 0
@@ -321,6 +125,7 @@ def checkascending(resultsraw, errors):
             results.append(result)
         elif result[0] < minimum:
             errors.append("Error: %d not ascending from %d" % (result[0], minimum))
+    results = sorted(results)
     return results, errors
 
 
@@ -333,33 +138,16 @@ def checkdescending(resultsraw, errors):
             results.append(result)
         elif result[0] > maximum:
             errors.append("Error: %d not descending from %d" % (result[0], maximum))
+    results = sorted(results)
     return results, errors
 
 
-# finds % of all pathogenic mutations on domain
-def percent_pathogenic(total, helix_start, helix_end):
-    numerator = 0
-    denom = 0
-    for value in total:
-        if helix_start <= value[0] <= helix_end and (value[1] == 1 or value[1] == 2):
-            numerator += 1
-        if value[1] == 1 or value[1] == 2:
-            denom += 1
-    percentage = (float(numerator) / float(denom)) * 100
-    return numerator, denom, percentage
-
-
-# finds % of all vus on domain
-def percent_vus(total, helix_start, helix_end):
-    numerator1 = 0
-    denom1 = 0
-    for value in total:
-        if helix_start <= value[0] <= helix_end and value[1] == 0:
-            numerator1 += 1
-        if value[1] == 0:
-            denom1 += 1
-    percentage1 = (float(numerator1) / float(denom1)) * 100
-    return numerator1, denom1, percentage1
+# returns how many overlapping markers there are at given location
+def checkoverlaps(num, list_location, overlaps):
+    for number in list_location:
+        if number == num:
+            overlaps += 1
+    return overlaps
 
 
 # parse edits file
@@ -376,16 +164,4 @@ def edits(reader, protein_id, number):
             editslist.append(location)
     return editslist
 
-
-# parse ccrs file
-def ccrs(reader):
-    ccrslist = []
-    for row in reader:
-        position = row[0]
-        position = int(position)
-        percent = row[1]
-        percent = float(percent)
-        result = [position, percent]
-        ccrslist.append(result)
-
-    return ccrslist
+             
